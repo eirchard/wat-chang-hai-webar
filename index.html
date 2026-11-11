@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#170e0a" />
+  <title>CAHAYA • วัดช้างให้ | WebAR 3D</title>
+  <!-- Tested APIs based on the official MindAR/A-Frame integration guide. -->
+  <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+  <style>
+    :root{color-scheme:dark;--bg:#180f0b;--gold:#eac384;--muted:#e4d3c3;--stroke:rgba(252,226,193,.18)}
+    *{box-sizing:border-box} [hidden]{display:none!important} html,body{margin:0;height:100%;overflow:hidden;font-family:system-ui,-apple-system,"Noto Sans Thai",sans-serif;background:var(--bg);color:#fff}
+    a{color:var(--gold)} button{font:inherit;cursor:pointer} button:disabled{opacity:.4;cursor:not-allowed}
+    .scene{position:fixed!important;inset:0!important;z-index:1;background:#110e0b;}
+    #topbar{position:fixed;left:0;right:0;top:0;z-index:8;display:flex;align-items:center;justify-content:space-between;padding:calc(env(safe-area-inset-top,0px) + 14px) 16px 11px;background:linear-gradient(to bottom,rgba(23,14,10,.88),rgba(23,14,10,.30));pointer-events:none}
+    #topbar .brand{font-size:16px;font-weight:900;letter-spacing:.12em;color:var(--gold)}
+    #topbar .small{font-size:11px;font-weight:600;letter-spacing:.15em;color:#f1dcbf;display:block}
+    #status{font-size:12px;color:#fff;background:rgba(0,0,0,.5);padding:8px 10px;border:1px solid var(--stroke);border-radius:99px;max-width:60%;text-align:right}
+    #tools{position:fixed;z-index:10;bottom:calc(env(safe-area-inset-bottom,0px) + 22px);left:10px;right:10px;display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;pointer-events:none}
+    #tools button{pointer-events:auto;border:1px solid var(--stroke);background:rgba(20,12,9,.81);color:#fff;box-shadow:0 3px 18px rgba(0,0,0,.24);backdrop-filter:blur(10px);border-radius:13px;min-height:44px;padding:10px 14px;font-weight:700;font-size:13px}
+    #tools button:active{transform:translateY(1px);background:rgba(124,77,35,.7)}
+    #cover{position:fixed;z-index:50;inset:0;overflow:auto;display:flex;align-items:center;justify-content:center;padding:28px 20px;background:radial-gradient(circle at 50% 20%,#5f3320,#180f0b 62%)}
+    #cover.hidden{display:none}
+    .cover-card{width:min(100%,560px);max-height:100%;display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px}
+    .eyebrow{color:var(--gold);letter-spacing:.16em;font-size:12px;font-weight:800}
+    .cover-card h1{font-size:clamp(24px,6vw,36px);margin:0;line-height:1.25}
+    .cover-card .desc{font-size:14px;color:#ecddd0;line-height:1.7;margin:0}
+    .poster{width:min(180px,33vh);aspect-ratio:1100 / 1376;object-fit:cover;border-radius:8px;border:2px solid rgba(255,224,174,.65);box-shadow:0 10px 35px rgba(0,0,0,.5)}
+    .mainbtn{border:0;border-radius:16px;background:linear-gradient(135deg,#f8d996,#b67833);padding:14px 24px;color:#2c1b11;font-weight:900;font-size:16px;width:min(100%,340px)}
+    .sub{font-size:12px;color:#decdc2;line-height:1.65;margin:0}
+    #error{display:none;color:#ffd9a1;background:rgba(90,32,19,.6);border:1px solid #9c5947;border-radius:10px;padding:9px 13px;font-size:13px;line-height:1.6;max-width:440px}
+    .links{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;font-size:13px}
+    #infoShade{display:none;position:fixed;z-index:60;inset:0;background:rgba(0,0,0,.62);padding:20px;align-items:center;justify-content:center}
+    #infoShade.open{display:flex}.infocard{width:min(100%,460px);border:1px solid var(--stroke);border-radius:22px;background:#27170f;padding:24px;line-height:1.8}
+    .infocard h2{margin:0 0 10px;font-size:21px;color:var(--gold)}
+    .infocard p{margin:0 0 16px;font-size:14px;color:#efddcd}
+    .close{background:var(--gold);border:0;padding:12px 18px;border-radius:12px;color:#241510;font-weight:800}
+    #guidance{position:fixed;bottom:calc(env(safe-area-inset-bottom,0px) + 90px);left:15px;right:15px;z-index:7;text-align:center;font-size:14px;pointer-events:none;text-shadow:0 2px 10px #000}
+    @media(max-height:650px){.poster{width:100px}.cover-card{gap:7px}.cover-card h1{font-size:24px}.cover-card .desc{font-size:12px}}
+  </style>
+</head>
+<body>
+  <div id="topbar">
+    <div><span class="brand">CAHAYA</span><span class="small">WAT CHANG HAI • WEBAR</span></div>
+    <div id="status" aria-live="polite">ยังไม่เปิดกล้อง</div>
+  </div>
+
+  <!-- The .mind file must be generated from target-wat-chang-hai.jpg; see README_TH.md. -->
+  <a-scene id="arScene" class="scene"
+      mindar-image="imageTargetSrc: ./assets/targets.mind; autoStart: false; maxTrack: 1; uiLoading: no; uiScanning: no; uiError: no"
+      renderer="colorManagement: true; antialias: true; alpha: true"
+      color-space="sRGB"
+      vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false"
+      embedded>
+    <a-assets timeout="15000">
+      <a-asset-item id="templeAsset" src="./assets/wat-chang-hai-stupa.glb"></a-asset-item>
+    </a-assets>
+    <a-camera position="0 0 0" look-controls="enabled: false" cursor="fuse: false; rayOrigin: mouse"></a-camera>
+    <a-entity id="imageAnchor" mindar-image-target="targetIndex: 0">
+      <!-- +90° X makes the Y-up temple rise out of the tracked picture along its normal. -->
+      <a-entity id="popup" position="0 -0.20 0.02" rotation="90 0 0">
+        <a-gltf-model id="temple" src="#templeAsset" position="0 0 0" scale="1 1 1"></a-gltf-model>
+      </a-entity>
+    </a-entity>
+    <a-entity light="type: ambient; color: #ffecdc; intensity: 1.25"></a-entity>
+    <a-entity light="type: directional; color: #fff2d6; intensity: 1.75" position="0.5 1 1"></a-entity>
+  </a-scene>
+
+  <div id="guidance" aria-live="polite" hidden>ส่องกล้องไปที่โปสเตอร์วัดช้างให้ให้เห็นเต็มภาพ</div>
+  <div id="tools" hidden>
+    <button type="button" id="left">↶ หมุนซ้าย</button>
+    <button type="button" id="right">หมุนขวา ↷</button>
+    <button type="button" id="zoomout">− ย่อ</button>
+    <button type="button" id="zoomin">+ ขยาย</button>
+    <button type="button" id="reset">↺ รีเซ็ต</button>
+    <button type="button" id="info">ⓘ ข้อมูล</button>
+    <button type="button" id="stop">■ ปิดกล้อง</button>
+  </div>
+
+  <div id="cover">
+    <div class="cover-card">
+      <span class="eyebrow">COLLECTION 2 • AR EXPERIENCE</span>
+      <h1>เจดีย์ลอยออกจากภาพ</h1>
+      <img class="poster" src="./assets/target-wat-chang-hai.jpg" alt="ภาพโปสเตอร์วัดช้างให้ CAHAYA สำหรับสแกน AR" />
+      <p class="desc">เปิดกล้องโทรศัพท์ แล้วส่องไปที่โปสเตอร์ฉบับพิมพ์<br/>จะเห็นเจดีย์ 3 มิติปรากฏขึ้นบนภาพ</p>
+      <button class="mainbtn" id="start" type="button">เริ่มสแกน AR</button>
+      <div id="error" role="alert"></div>
+      <p class="sub">ต้องเปิดผ่านเว็บไซต์ HTTPS และใช้โปสเตอร์ที่พิมพ์ไว้<br/>หรือแสดงบนอีกหน้าจอหนึ่ง ไม่สามารถใช้กล้องสแกนภาพที่แสดงอยู่ในโทรศัพท์เครื่องเดียวกันได้</p>
+      <div class="links"><a href="./preview.html">ดูตัวอย่างโมเดล 3 มิติ</a><a href="./assets/target-wat-chang-hai.jpg" target="_blank" rel="noopener">ดูภาพต้นฉบับ</a></div>
+    </div>
+  </div>
+
+  <div id="infoShade" role="dialog" aria-modal="true" aria-labelledby="infoTitle">
+    <div class="infocard">
+      <h2 id="infoTitle">วัดช้างให้ • CAHAYA</h2>
+      <p>ต้นแบบแสดงโมเดลเจดีย์ 3 มิติจากภาพโปสเตอร์ที่กำหนดไว้ โมเดลนี้เป็นงานตีความเพื่อทดลอง WebAR ยังไม่ใช่แบบจำลองสถาปัตยกรรมที่ผ่านการตรวจสอบความถูกต้องของสถานที่จริง</p>
+      <p>วิธีใช้งาน: ส่องกล้องให้เห็นโปสเตอร์ครบทั้งภาพ ใช้ปุ่มหมุนหรือขยายโมเดล และขยับโทรศัพท์เพื่อดูมุมมองที่เปลี่ยนไป</p>
+      <button class="close" id="closeInfo" type="button">ปิดข้อมูล</button>
+    </div>
+  </div>
+
+  <script>
+  (function () {
+    const $ = (s)=>document.querySelector(s);
+    const scene = $('#arScene');
+    const target = $('#imageAnchor');
+    const model = $('#temple');
+    const popup = $('#popup');
+    const status = $('#status');
+    const errorEl = $('#error');
+    let scale = 1, angle = 0, starting = false, running = false;
+    const setStatus = (s)=>{status.textContent=s};
+    function showError(msg) { errorEl.textContent=msg;errorEl.style.display='block'; }
+    function setModelTransform(){
+      model.object3D.rotation.y = angle*Math.PI/180;
+      model.object3D.scale.setScalar(scale);
+    }
+    target.addEventListener('targetFound',()=>{
+      setStatus('✓ พบโปสเตอร์แล้ว');
+      $('#guidance').textContent='ลองกดหมุนหรือขยายเจดีย์ 3 มิติ';
+      popup.removeAttribute('animation__pop');
+      popup.setAttribute('animation__pop', 'property: scale; from: 0.05 0.05 0.05; to: 1 1 1; dur: 650; easing: easeOutBack');
+    });
+    target.addEventListener('targetLost',()=>{
+      setStatus('กำลังค้นหาภาพต้นฉบับ');
+      $('#guidance').textContent='ส่องกล้องไปที่โปสเตอร์วัดช้างให้ให้เห็นเต็มภาพ';
+    });
+    $('#left').onclick = ()=>{angle-=20;setModelTransform()};
+    $('#right').onclick = ()=>{angle+=20;setModelTransform()};
+    $('#zoomin').onclick = ()=>{scale=Math.min(1.8,scale+.15);setModelTransform()};
+    $('#zoomout').onclick = ()=>{scale=Math.max(.45,scale-.15);setModelTransform()};
+    $('#reset').onclick = ()=>{scale=1;angle=0;setModelTransform()};
+    $('#info').onclick = ()=>$('#infoShade').classList.add('open');
+    $('#closeInfo').onclick = ()=>$('#infoShade').classList.remove('open');
+    $('#infoShade').addEventListener('click',(ev)=>{if(ev.target.id==='infoShade')$('#infoShade').classList.remove('open')});
+    $('#stop').onclick = ()=>{
+      try { scene.systems['mindar-image-system'].stop(); } catch(e){console.warn(e)}
+      running=false;
+      $('#cover').classList.remove('hidden');
+      $('#tools').hidden=true; $('#guidance').hidden=true;
+      setStatus('ปิดกล้องแล้ว');$('#start').disabled=false;$('#start').textContent='เริ่มสแกน AR';
+    };
+    $('#start').onclick = async ()=>{
+      if(starting || running)return;
+      starting=true; errorEl.style.display='none';
+      $('#start').disabled=true;$('#start').textContent='กำลังตรวจสอบไฟล์...';
+      try {
+        const res=await fetch('./assets/targets.mind', {cache:'no-store'});
+        if(!res.ok || (res.headers.get('content-type')||'').includes('text/html')) {
+          throw new Error('ยังไม่มีไฟล์ assets/targets.mind — ต้องแปลงรูปโปสเตอร์ด้วย MindAR Image Targets Compiler ก่อน (ดู README_TH.md ในชุดไฟล์)');
+        }
+        if (!scene.systems || !scene.systems['mindar-image-system']) {
+          throw new Error('โหลดระบบ MindAR ไม่สำเร็จ ตรวจสอบอินเทอร์เน็ตและเปิดผ่าน HTTPS');
+        }
+        $('#start').textContent='กำลังเปิดกล้อง...';
+        setStatus('กำลังเปิดกล้อง');
+        await scene.systems['mindar-image-system'].start();
+        running=true;
+        $('#cover').classList.add('hidden');
+        $('#tools').hidden=false;$('#guidance').hidden=false;
+        setStatus('กำลังค้นหาภาพต้นฉบับ');
+      } catch(e) {
+        console.error(e);
+        showError(e && e.message ? e.message : 'เปิดกล้องไม่สำเร็จ กรุณาอนุญาตการใช้กล้องและลองอีกครั้ง');
+        setStatus('ยังไม่เปิดกล้อง');
+      } finally {
+        starting=false;$('#start').disabled=false;$('#start').textContent='เริ่มสแกน AR';
+      }
+    };
+  })();
+  </script>
+</body>
+</html>
