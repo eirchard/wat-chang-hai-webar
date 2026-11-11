@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="th"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>ตัวอย่างโมเดลเจดีย์ | CAHAYA WebAR</title>
+<script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;font-family:system-ui,"Noto Sans Thai",sans-serif;background:#160e09;color:#fff}
+#app{position:fixed;inset:0}header{position:fixed;z-index:3;top:0;left:0;right:0;padding:18px;background:linear-gradient(#1f120eda,transparent);pointer-events:none}
+header b{color:#f7ce8c;font-size:21px;letter-spacing:.1em}header small{display:block;color:#eee2d5}footer{position:fixed;z-index:3;left:0;right:0;bottom:0;padding:20px 12px;display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap;background:linear-gradient(transparent,#160e09aa)}
+button,.link{color:white;border:1px solid #8d6d45;background:#483022;padding:11px 13px;border-radius:12px;text-decoration:none;font:inherit;font-size:14px}
+.note{position:fixed;top:80px;left:20px;right:20px;text-align:center;color:#f9e8d1;font-size:12px;z-index:3;pointer-events:none}
+</style></head><body>
+<div id="app"><a-scene embedded renderer="colorManagement: true; antialias: true" background="color: #211610" vr-mode-ui="enabled: false">
+<a-assets><a-asset-item id="templeasset" src="./assets/wat-chang-hai-stupa.glb"></a-asset-item></a-assets>
+<a-camera position="0 0.70 1.8" rotation="-11 0 0" look-controls="enabled: false" wasd-controls="enabled: false"></a-camera>
+<a-entity id="pivot" position="0 0.02 0"><a-gltf-model id="model" src="#templeasset" scale="1 1 1"></a-gltf-model></a-entity>
+<a-plane rotation="-90 0 0" position="0 -.015 0" width="6" height="6" color="#33251f"></a-plane>
+<a-entity light="type: ambient; color:#fff6de; intensity:1.25"></a-entity><a-entity light="type: directional; color:#ffffff; intensity:2" position="-1 2 2"></a-entity>
+</a-scene></div>
+<header><b>CAHAYA</b><small>ตัวอย่างโมเดลเจดีย์ 3 มิติ • ไม่ใช้กล้อง AR</small></header>
+<div class="note">ต้นแบบตีความสถาปัตยกรรม ไม่ใช่แบบจำลองที่ตรวจสอบกับสถานที่จริง</div>
+<footer><button id="left">↶ หมุนซ้าย</button><button id="right">หมุนขวา ↷</button><button id="smaller">− ย่อ</button><button id="bigger">+ ขยาย</button><a class="link" href="./index.html">เปิดหน้า WebAR</a></footer>
+<script>
+let scale=1,angle=0;let model=document.querySelector('#model');
+function apply(){model.object3D.scale.setScalar(scale);model.object3D.rotation.y=angle*Math.PI/180;}
+document.querySelector('#left').onclick=()=>{angle-=22;apply()};
+document.querySelector('#right').onclick=()=>{angle+=22;apply()};
+document.querySelector('#bigger').onclick=()=>{scale=Math.min(1.9,scale+.15);apply()};
+document.querySelector('#smaller').onclick=()=>{scale=Math.max(.45,scale-.15);apply()};
+</script></body></html>
